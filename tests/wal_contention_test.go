@@ -13,9 +13,10 @@ import (
 	"github.com/ncruces/go-sqlite3/vfs"
 )
 
-// Several connections with a busy timeout write to one WAL database. A lock
-// request that times out must not leave the lock behind: if it does, every
-// writer waits out its busy timeout and fails with "database is locked".
+// Several connections with a busy timeout write to one WAL database and none
+// may fail with "database is locked". This passed on Windows even with the
+// timed file lock that could leak a lock (upstream #254), so it guards the
+// behaviour but does not reproduce that defect.
 func TestWAL_contention(t *testing.T) {
 	if !vfs.SupportsSharedMemory {
 		t.Skip("skipping without shared memory")
