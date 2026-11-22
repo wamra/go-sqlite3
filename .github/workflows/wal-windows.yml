@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-go@v5
         with: { go-version: stable }
       - name: WAL tests pass with the fix
-        run: go test ./tests/ -run TestWAL -count=1 -v
+        run: go test ./tests/ -run TestWAL -count=3 -v -timeout 300s
       - name: VFS tests
         run: go test ./vfs/ -count=1
 
