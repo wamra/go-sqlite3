@@ -1,0 +1,39 @@
+name: WAL on Windows (backport)
+
+on:
+  push:
+    branches: [ "wamra/**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  patched:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: stable }
+      - name: WAL tests pass with the fix
+        run: go test ./tests/ -run TestWAL -count=1 -v
+      - name: VFS tests
+        run: go test ./vfs/ -count=1
+
+  unpatched:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-go@v5
+        with: { go-version: stable }
+      - name: Restore the v0.21.3 mapping code
+        run: git checkout v0.21.3 -- internal/util/mmap_windows.go vfs/shm_windows.go
+      - name: The large-transaction test must fail without the fix
+        shell: bash
+        run: |
+          if go test ./tests/ -run TestWAL_large_transaction -count=1 -v; then
+            echo "::error::the test passed without the fix, so it does not cover the defect"
+            exit 1
+          fi
+          echo "failed as expected without the fix"
